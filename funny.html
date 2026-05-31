@@ -24,7 +24,6 @@
             margin-bottom: 80px;
             letter-spacing: 2px;
         }
-        /* 主按钮 */
         .main-btn{
             background:#d4af37;
             border:none;
@@ -39,7 +38,6 @@
             background: #b9962c;
             transform: scale(1.05);
         }
-        /* 惊吓弹窗 */
         .scary-pop{
             display: none;
             position: fixed;
@@ -48,14 +46,33 @@
             width: 100vw;
             height: 100vh;
             background: #000;
-            z-index: 999;
+            z-index: 9999;
             align-items: center;
             justify-content: center;
+            /* 初始状态：极小+完全透明 */
+            opacity: 0;
+            transform: scale(0);
+            /* 平滑放大过渡 */
+            transition: all 0.3s ease-out;
+        }
+        /* 弹窗激活状态：完全放大+显示 */
+        .scary-pop.active{
+            opacity: 1;
+            transform: scale(1);
         }
         .scary-img{
             max-width: 90vw;
             max-height: 90vh;
-            border-radius: 8px;
+            border-radius:8px;
+        }
+        /* 全屏惊吓闪烁动画 */
+        @keyframes flash {
+            0% {background:#000;}
+            50% {background:#ff0000;}
+            100% {background:#000;}
+        }
+        .flash-on{
+            animation: flash 0.08s infinite alternate;
         }
     </style>
 </head>
@@ -63,30 +80,40 @@
     <h1>没事不要乱点</h1>
     <button class="main-btn">请按</button>
 
-    <!-- 惊吓弹窗+音效 -->
     <div class="scary-pop">
-        <img class="scary-img" src="./scary.jpg">
+        <img class="scary-img" src="scary.jpg">
     </div>
 
     <script>
         const btn = document.querySelector('.main-btn')
         const pop = document.querySelector('.scary-pop')
-
-        // 恐怖惊吓音效（免上传，直接在线调用）
+        // 超惊悚尖叫音效
         const scarySound = new Audio('https://www.myinstants.com/media/sounds/jumpscare-scream.mp3')
+        scarySound.preload = 'auto'
 
-        btn.addEventListener('click', ()=>{
-            // 瞬间弹出全屏图片
+        btn.onclick = ()=>{
+            // 打开弹窗
             pop.style.display = 'flex'
-            // 拉满音量播放恐怖尖叫音效
+            // 强制重绘，保证动画生效
+            setTimeout(()=>{
+                pop.classList.add('active')
+                // 开启全屏爆闪
+                pop.classList.add('flash-on')
+            },10)
+            // 音效拉满
+            scarySound.currentTime = 0
             scarySound.volume = 1
             scarySound.play()
-        })
+        }
 
-        // 点击任意位置关闭弹窗
-        pop.addEventListener('click', ()=>{
-            pop.style.display = 'none'
-        })
+        // 点击关闭弹窗
+        pop.onclick = ()=>{
+            pop.classList.remove('active')
+            pop.classList.remove('flash-on')
+            setTimeout(()=>{
+                pop.style.display = 'none'
+            },300)
+        }
     </script>
 </body>
 </html>
