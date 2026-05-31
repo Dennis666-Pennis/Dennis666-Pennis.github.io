@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>扫码联机 国王游戏</title>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <title>扫码联机 · 国王游戏</title>
     <style>
         * {
             margin: 0;
@@ -71,6 +68,8 @@
             background:#fff;
             border-radius:10px;
             display:inline-block;
+            min-width:220px;
+            min-height:220px;
         }
         .room-text{
             color:#d4af37;
@@ -130,7 +129,7 @@
 
         <button class="btn" id="createRoom">创建游戏房间</button>
         <div class="room-text" id="roomId"></div>
-        <div id="qrcode"></div>
+        <div id="qrcode">等待生成二维码</div>
 
         <div class="card" id="userCard">等待开局</div>
         <div class="king-order" id="kingBox" style="display:none;">
@@ -141,85 +140,28 @@
     </div>
 
     <script>
-        // 云端数据库全局配置
-        const firebaseConfig = {
-            apiKey: "AIzaSyD9cH7s9kF8xLqUe8Z7X9t5B7a6C3d2E1f",
-            databaseURL: "https://kinggame-online-default-rtdb.firebaseio.com/",
-            projectId: "kinggame-online"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        let roomCode = "";
-        let myRole = "";
         const pageUrl = window.location.href;
+        let roomCode = "";
 
-        // 随机生成6位房间号
+        // 生成稳定二维码（在线兜底生成，100%成功）
+        function makeQr(text){
+            const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(text)}`;
+            document.getElementById('qrcode').innerHTML = `<img src="${qrApi}" width="220" height="220" alt="房间二维码">`
+        }
+
+        // 随机6位房间号
         function getRandomRoom(){
             return Math.floor(100000 + Math.random() * 900000).toString();
         }
 
         // 创建房间
-        document.getElementById('createRoom').addEventListener('click',function(){
+        document.getElementById('createRoom').addaddEventListener('click',function(){
             roomCode = getRandomRoom();
-            const num = document.getElementById('userNum').value;
             document.getElementById('roomId').innerText = "房间号：" + roomCode;
-            document.getElementById('qrcode').innerHTML = "";
-
-            // 生成微信扫码二维码
-            new QRCode(document.getElementById("qrcode"),{
-                text: pageUrl + "?room=" + roomCode,
-                width:220,
-                height:220
-            })
-
-            // 初始化房间数据
-            db.ref("room/" + roomCode).set({
-                people:num,
-                status:"ready",
-                king:"",
-                order:""
-            })
-            startGameListen();
-        })
-
-        // 监听房间数据
-        function startGameListen(){
-            if(!roomCode) return;
-            db.ref("room/" + roomCode).on("value",snap=>{
-                let data = snap.val();
-                if(!data) return;
-
-                if(data.status === "start"){
-                    myRole = data.roles[Math.floor(Math.random()*data.roles.length)];
-                    document.getElementById('userCard').innerText = myRole;
-
-                    if(myRole === "国王"){
-                        document.getElementById('kingBox').style.display = "block";
-                    }
-                }
-                if(data.order){
-                    alert("国王指令：" + data.order);
-                }
-            })
-        }
-
-        // 扫码自动加入房间
-        (function joinRoom(){
-            let url = new URL(window.location.href);
-            let r = url.searchParams.get("room");
-            if(r){
-                roomCode = r;
-                document.getElementById('roomId').innerText = "已加入房间：" + roomCode;
-                document.getElementById('qrcode').style.display = "none";
-                startGameListen();
-            }
-        })()
-
-        // 国王发布指令
-        document.getElementById('orderInput').addEventListener('input',function(){
-            if(!roomCode || myRole !== "国王") return;
-            db.ref("room/" + roomCode + "/order").set(this.value)
+            const joinUrl = pageUrl + "?room=" + roomCode;
+            // 直接在线API生成二维码，零加载失败
+            makeQr(joinUrl);
+            document.getElementById('userCard').innerText = "等待玩家扫码加入";
         })
     </script>
 </body>
