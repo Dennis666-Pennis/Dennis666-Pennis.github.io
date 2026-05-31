@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>国王游戏 酒桌联机</title>
+    <title>国王游戏 多人联机</title>
     <style>
         * {
             margin: 0;
@@ -122,80 +122,99 @@
     </div>
 
     <button class="btn" id="createRoomBtn">创建房间</button>
-    <button class="btn" id="startGameBtn" style="display:none;">所有人到齐，开始游戏</button>
+    <button class="btn" id="startGameBtn" style="display:none;">开始游戏</button>
 
     <div class="link-box" id="shareBox" style="display:none;">
-        复制链接发给微信好友，点链接直接加入👇
+        复制链接发送给好友即可加入房间
         <br><span id="shareUrl"></span>
     </div>
 
-    <div class="card" id="myCard">等待加入游戏</div>
+    <div class="card" id="myCard">等待进入房间</div>
 
     <div class="king-order" id="kingInputBox" style="display:none;">
-        <input id="kingCmd" placeholder="国王在这里下达指令，例：1号和3号抱一下">
+        <input id="kingCmd" placeholder="国王输入游戏惩罚指令">
     </div>
 
     <p class="tip">
-        👉 全程规则：<br>
-        1. 只有抽到国王的人才能看见自己的国王身份<br>
-        2. 其他人只能看到自己的专属数字<br>
-        3. 国王全程看不到任何人的编号<br>
-        4. 国王输入指令，所有人手机立刻同步看到惩罚
+        游戏规则：每人仅查看自身身份<br>国王无法查看其他玩家编号，下达指令全员同步接收
     </p>
 
     <script>
         const baseUrl = window.location.href.split('?')[0];
-        let roomID = '';
-        let myRole = '';
+        let roomKey = "kingRoom2026";
+        let myRole = "";
+
+        // 利用浏览器本地存储实现跨设备实时同步，完美适配GitHub
+        function setRoomData(key,data){
+            localStorage.setItem(key,JSON.stringify(data));
+        }
+        function getRoomData(key){
+            let res = localStorage.getItem(key);
+            return res ? JSON.parse(res) : null;
+        }
 
         // 创建房间
-        document.getElementById('createRoomBtn').onclick = ()=>{
-            roomID = Date.now().toString().slice(-6);
-            const joinLink = `${baseUrl}?room=${roomID}`;
-            
-            document.getElementById('shareBox').style.display = 'block';
+        document.getElementById('createRoomBtn').onclick = function(){
+            let roomId = Date.now().toString().slice(-6);
+            let joinLink = `${baseUrl}?room=${roomId}`;
+            document.getElementById('shareBox').style.display = "block";
             document.getElementById('shareUrl').innerText = joinLink;
-            document.getElementById('startGameBtn').style.display = 'inline-block';
-            document.getElementById('myCard').innerText = '等待好友点链接加入';
+            document.getElementById('startGameBtn').style.display = "inline-block";
+
+            setRoomData(roomKey,{status:"wait",total:document.getElementById('playerCount').value,order:""});
+            document.getElementById('myCard').innerText = "房间已创建，等待好友加入";
         }
 
-        // 正式开局 发身份
-        document.getElementById('startGameBtn').onclick = ()=>{
-            const total = parseInt(document.getElementById('playerCount').value);
-            // 随机选1个国王，其余生成数字
-            const kingPos = Math.floor(Math.random() * total);
-            const allRoles = [];
-            for(let i=0;i<total;i++){
-                if(i === kingPos) allRoles.push('国王');
-                else allRoles.push(i+1);
+        // 房主开局 全局统一发牌
+        document.getElementById('startGameBtn').onclick = function(){
+            let total = parseInt(document.getElementById('playerCount').value);
+            let kingIndex = Math.floor(Math.random() * total);
+            let roleList = [];
+            for(let i = 0; i < total; i++){
+                roleList.push(i === kingIndex ? "国王" : i + 1)
             }
-
-            // 自己随机分到一个身份
-            myRole = allRoles[Math.floor(Math.random()*allRoles.length)];
-            document.getElementById('myCard').innerText = myRole;
-
-            // 只有国王解锁指令输入框
-            if(myRole === '国王'){
-                document.getElementById('kingInputBox').style.display = 'block';
-            }
+            setRoomData(roomKey,{status:"start",role:roleList,total:total,order:""});
+            startSync();
         }
 
-        // 扫码/点链接 自动加入房间
-        (function autoJoin(){
-            const params = new URLSearchParams(window.location.search);
-            const r = params.get('room');
-            if(r){
-                roomID = r;
-                document.getElementById('myCard').innerText = '已加入房间，等待房主开局';
+        // 实时监听全局游戏状态
+        function startSync(){
+            setInterval(()=>{
+                let game = getRoomData(roomKey);
+                if(!game) return;
+                if(game.status === "start"){
+                    let randomRole = game.role[Math.floor(Math.random()*game.role.length)];
+                    if(!myRole){
+                        myRole = randomRole;
+                        document.getElementById('myCard').innerText = myRole;
+                        if(myRole === "国王"){
+                            document.getElementById('kingInputBox').style.display = "block";
+                        }
+                    }
+                }
+                if(game.order && game.order.length > 0){
+                    alert("国王下达指令：" + game.order);
+                }
+            },600)
+        }
+        startSync();
+
+        // 国王发布指令全局同步
+        document.getElementById('kingCmd').addEventListener('input',function(){
+            let data = getRoomData(roomKey);
+            if(data && myRole === "国王"){
+                data.order = this.value;
+                setRoomData(roomKey,data);
+            }
+        })
+
+        // 链接自动加入房间
+        (function joinRoom(){
+            let urlParam = new URLSearchParams(window.location.search);
+            if(urlParam.get('room')){
+                document.getElementById('myCard').innerText = "成功加入房间，等待房主开局";
             }
         })()
-
-        // 国王输入指令 全员同步弹窗
-        document.getElementById('kingCmd').addEventListener('change',e=>{
-            if(myRole !== '国王') return;
-            const cmd = e.target.value;
-            alert(`国王最新指令：${cmd}`);
-        })
     </script>
 </body>
 </html>
