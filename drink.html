@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>酒桌幸运大转盘</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #121212;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 微软雅黑;
+        }
+        h1 {
+            color: #d4af37;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+        /* 转盘外层边框 */
+        .wheel-box {
+            position: relative;
+            width: 420px;
+            height: 420px;
+        }
+        .pointer{
+            position: absolute;
+            top:-25px;
+            left:50%;
+            transform: translateX(-50%);
+            width:0;
+            height:0;
+            border-left:15px solid transparent;
+            border-right:15px solid transparent;
+            border-top:30px solid #d4af37;
+            z-index:10;
+        }
+        #wheel{
+            width:100%;
+            height:100%;
+            border-radius:50%;
+            transition: all 4s cubic-bezier(0.17,0.67,0.12,0.99);
+            border:6px solid #d4af37;
+        }
+        .start-btn{
+            margin-top:50px;
+            background:#d4af37;
+            border:none;
+            padding:16px 65px;
+            border-radius:8px;
+            font-size:18px;
+            font-weight:bold;
+            cursor:pointer;
+            transition:0.3s;
+        }
+        .start-btn:hover{
+            background:#b9962c;
+            transform: scale(1.05);
+        }
+        .result-text{
+            color:#fff;
+            margin-top:30px;
+            font-size:20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>酒桌幸运大转盘</h1>
+    <div class="wheel-box">
+        <div class="pointer"></div>
+        <canvas id="wheel"></canvas>
+    </div>
+    <button class="start-btn">开始转动</button>
+    <div class="result-text">等待抽奖</div>
+
+    <script>
+        const canvas = document.getElementById('wheel');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 420;
+        canvas.height = 420;
+
+        // 酒桌转盘八个分区
+        const textList = ["免饮一次","罚饮半杯","真心话","随意敬酒","空过一轮","大冒险","自饮两杯","指定他人喝酒"];
+        const colorList = ["#222222","#2b2b2b","#333333","#3a3a3a","#444444","#4a4a4a","#505050","#575757"];
+        let startAngle = 0;
+        const split = Math.PI * 2 / textList.length;
+
+        // 绘制转盘
+        function drawWheel(){
+            for(let i=0;i<textList.length;i++){
+                ctx.beginPath();
+                ctx.moveTo(210,210);
+                ctx.arc(210,210,210,startAngle,startAngle+split);
+                ctx.fillStyle = colorList[i];
+                ctx.fill();
+                ctx.strokeStyle = #d4af37;
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(210,210);
+                ctx.rotate(startAngle + split/2);
+                ctx.fillStyle = "#d4af37";
+                ctx.font = "15px 微软雅黑";
+                ctx.textAlign = "center";
+                ctx.fillText(textList[i],140,10);
+                ctx.restore();
+                startAngle += split;
+            }
+        }
+        drawWheel();
+
+        let isRun = false;
+        let rotateDeg = 0;
+        const btn = document.querySelector('.start-btn');
+        const resText = document.querySelector('.result-text');
+
+        btn.onclick = function(){
+            if(isRun) return;
+            isRun = true;
+            resText.innerText = "转盘转动中...";
+            let randomRotate = 1500 + Math.floor(Math.random() * 1200);
+            rotateDeg += randomRotate;
+            canvas.style.transform = `rotate(${rotateDeg}deg)`;
+
+            setTimeout(()=>{
+                let num = rotateDeg % 360;
+                let index = Math.floor(num / (360 / textList.length));
+                let finalIdx = 7 - index;
+                resText.innerText = "最终结果：" + textList[finalIdx];
+                isRun = false;
+            },4000)
+        }
+    </script>
+</body>
+</html>
