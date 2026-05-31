@@ -89,6 +89,20 @@
         const pop = document.querySelector('.scary-pop')
         let clickCount = 0;
 
+        // 浏览器原生蜂鸣恐怖音效，规避GitHub音频拦截
+        function playScaryTone(){
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            oscillator.connect(gain);
+            gain.connect(audioCtx.destination);
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(25, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.6);
+        }
+
         btn.addEventListener('click',function(){
             clickCount ++;
 
@@ -103,11 +117,8 @@
                 void pop.offsetWidth
                 pop.classList.add('active')
                 pop.classList.add('flash-on')
-
-                // 原生点击事件直接触发音频，绕过浏览器拦截
-                let audio = new Audio("https://www.soundjay.com/scary-scream-1.mp3");
-                audio.volume = 1;
-                audio.play();
+                // 触发原生低沉惊悚刺耳音效
+                playScaryTone();
             }
         })
 
