@@ -49,13 +49,11 @@
             z-index: 9999;
             align-items: center;
             justify-content: center;
-            /* 初始状态：极小+完全透明 */
             opacity: 0;
             transform: scale(0);
-            /* 平滑放大过渡 */
-            transition: all 0.3s ease-out;
+            /* 提速 瞬间放大 */
+            transition: all 0.18s ease-out;
         }
-        /* 弹窗激活状态：完全放大+显示 */
         .scary-pop.active{
             opacity: 1;
             transform: scale(1);
@@ -65,14 +63,14 @@
             max-height: 90vh;
             border-radius:8px;
         }
-        /* 全屏惊吓闪烁动画 */
+        /* 高频极速闪烁 */
         @keyframes flash {
             0% {background:#000;}
             50% {background:#ff0000;}
             100% {background:#000;}
         }
         .flash-on{
-            animation: flash 0.08s infinite alternate;
+            animation: flash 0.05s infinite alternate;
         }
     </style>
 </head>
@@ -87,32 +85,30 @@
     <script>
         const btn = document.querySelector('.main-btn')
         const pop = document.querySelector('.scary-pop')
-        // 超惊悚尖叫音效
-        const scarySound = new Audio('https://www.myinstants.com/media/sounds/jumpscare-scream.mp3')
+
+        // 页面加载完立刻预缓存音效，零延迟
+        const scarySound = new Audio('https://www.myinstants.com/media/sounds/minecraft-jumpscare.mp3')
         scarySound.preload = 'auto'
+        scarySound.volume = 1
 
         btn.onclick = ()=>{
-            // 打开弹窗
             pop.style.display = 'flex'
-            // 强制重绘，保证动画生效
-            setTimeout(()=>{
-                pop.classList.add('active')
-                // 开启全屏爆闪
-                pop.classList.add('flash-on')
-            },10)
-            // 音效拉满
+            // 重绘锁帧，毫秒级同步
+            void pop.offsetWidth
+            pop.classList.add('active')
+            pop.classList.add('flash-on')
+
+            // 立刻从头爆响，无等待
             scarySound.currentTime = 0
-            scarySound.volume = 1
             scarySound.play()
         }
 
-        // 点击关闭弹窗
         pop.onclick = ()=>{
             pop.classList.remove('active')
             pop.classList.remove('flash-on')
             setTimeout(()=>{
                 pop.style.display = 'none'
-            },300)
+            },180)
         }
     </script>
 </body>
