@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>国王游戏 多人酒桌</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 微软雅黑;
+        }
+        body {
+            background: #121212;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        h1 {
+            color: #d4af37;
+            letter-spacing: 2px;
+            margin-bottom: 35px;
+        }
+        .select-box{
+            margin-bottom:40px;
+        }
+        label{
+            color:#fff;
+            font-size:17px;
+        }
+        select{
+            background:#222;
+            color:#d4af37;
+            border:1px solid #d4af37;
+            padding:8px 20px;
+            border-radius:6px;
+            font-size:16px;
+            margin-left:12px;
+        }
+        .start-btn{
+            background:#d4af37;
+            border:none;
+            padding:15px 60px;
+            border-radius:8px;
+            font-size:18px;
+            font-weight:bold;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom:40px;
+        }
+        .start-btn:hover{
+            background: #b9962c;
+            transform: scale(1.05);
+        }
+        .card-wrap{
+            display: flex;
+            flex-wrap: wrap;
+            gap:15px;
+            justify-content: center;
+            max-width:700px;
+        }
+        .card-item{
+            width:100px;
+            height:140px;
+            background:#1e1e1e;
+            border:2px solid #d4af37;
+            border-radius:10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color:#fff;
+            font-size:22px;
+            cursor:pointer;
+        }
+        .king-input{
+            margin-top:40px;
+            width:450px;
+        }
+        .king-input input{
+            width:100%;
+            padding:14px;
+            background:#222;
+            border:1px solid #d4af37;
+            color:#fff;
+            border-radius:8px;
+            font-size:16px;
+            outline: none;
+        }
+        .hide-text{
+            color:#999;
+            margin-top:20px;
+            font-size:15px;
+            text-align:center;
+        }
+    </style>
+</head>
+<body>
+    <h1>国王游戏</h1>
+
+    <div class="select-box">
+        <label>选择游玩人数</label>
+        <select id="peopleNum">
+            <option value="2">2人</option>
+            <option value="3">3人</option>
+            <option value="4">4人</option>
+            <option value="5">5人</option>
+            <option value="6">6人</option>
+            <option value="7">7人</option>
+            <option value="8" selected>8人</option>
+        </select>
+    </div>
+
+    <button class="start-btn">开始发牌</button>
+    <div class="card-wrap" id="cardBox"></div>
+
+    <div class="king-input" id="kingInputBox" style="display:none;">
+        <input id="orderInput" placeholder="国王在此下达指令，例如：1号与3号进行互动">
+    </div>
+    <p class="hide-text">每位玩家点击卡牌仅可查看自身身份，国王无法查看其他人编号</p>
+
+    <script>
+        const peopleSelect = document.getElementById('peopleNum')
+        const cardBox = document.getElementById('cardBox')
+        const startBtn = document.querySelector('.start-btn')
+        const kingInputBox = document.getElementById('kingInputBox')
+
+        let peopleCount = 8
+        let roleArr = []
+        let kingIndex = -1
+
+        peopleSelect.onchange = function(){
+            peopleCount = parseInt(this.value)
+        }
+
+        // 初始化发牌
+        startBtn.onclick = function(){
+            cardBox.innerHTML = ''
+            kingInputBox.style.display = 'none'
+            roleArr = []
+
+            // 随机选定国王位置
+            kingIndex = Math.floor(Math.random() * peopleCount)
+
+            for(let i = 0; i < peopleCount; i++){
+                if(i === kingIndex){
+                    roleArr.push("国王")
+                }else{
+                    roleArr.push(i + 1)
+                }
+            }
+
+            // 生成卡牌
+            for(let j = 0; j < peopleCount; j++){
+                let card = document.createElement('div')
+                card.className = "card-item"
+                card.innerText = "未知卡牌"
+                card.dataset.id = j
+
+                card.onclick = function(){
+                    let idx = parseInt(this.dataset.id)
+                    // 国王只显示自己身份，看不到其他人
+                    if(roleArr[idx] === "国王"){
+                        this.innerText = "国王"
+                        kingInputBox.style.display = 'block'
+                    }else{
+                        this.innerText = roleArr[idx]
+                    }
+                }
+                cardBox.appendChild(card)
+            }
+        }
+    </script>
+</body>
+</html>
