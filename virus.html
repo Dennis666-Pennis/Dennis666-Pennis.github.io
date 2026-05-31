@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统高危警告</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family:微软雅黑;
+        }
+        body{
+            background:#121212;
+            width:100vw;
+            height:100vh;
+            overflow:hidden;
+        }
+        .warn-title{
+            color: #d4af37;
+            text-align: center;
+            padding:60px 0;
+            font-size:28px;
+            letter-spacing:2px;
+        }
+        .virus-btn{
+            display: block;
+            margin:0 auto;
+            background:#d4af37;
+            border:none;
+            padding:20px 70px;
+            border-radius:10px;
+            font-size:20px;
+            font-weight:bold;
+            cursor: pointer;
+            transition:0.2s;
+        }
+        .virus-btn:hover{
+            background:#b9962c;
+            transform: scale(1.05);
+        }
+        /* 病毒报错弹窗样式 */
+        .error-box{
+            position: fixed;
+            width:280px;
+            height:160px;
+            background:#eeeeee;
+            border:3px solid #c00000;
+            display: none;
+            z-index:9999;
+        }
+        .error-top{
+            background:#c00000;
+            color:#fff;
+            padding:6px;
+            font-size:14px;
+        }
+        .error-text{
+            padding:25px 15px;
+            color:#333;
+            font-size:15px;
+        }
+    </style>
+</head>
+<body>
+    <h2 class="warn-title">系统检测正常</h2>
+    <button class="virus-btn">点击检测系统</button>
+
+    <!-- 多层病毒报错弹窗 -->
+    <div class="error-box" style="top:15%;left:10%;">
+        <div class="error-top">系统错误</div>
+        <div class="error-text">未知恶意程序正在入侵</div>
+    </div>
+    <div class="error-box" style="top:40%;left:55%;">
+        <div class="error-top">高危病毒警告</div>
+        <div class="error-text">磁盘文件正在遭到损坏</div>
+    </div>
+    <div class="error-box" style="top:65%;left:25%;">
+        <div class="error-top">程序运行异常</div>
+        <div class="error-text">系统内核已经遭到篡改</div>
+    </div>
+
+    <script>
+        const btn = document.querySelector('.virus-btn')
+        const title = document.querySelector('.warn-title')
+        const allError = document.querySelectorAll('.error-box')
+        let clickNum = 0;
+
+        btn.addEventListener('click',()=>{
+            clickNum++
+            if(clickNum === 1){
+                title.innerText = "正在扫描电脑底层文件..."
+            }
+            else if(clickNum === 2){
+                title.innerText = "已经检测到大量高危病毒"
+            }
+            else if(clickNum >= 3){
+                title.innerText = "系统即将全面崩溃！"
+                // 全部报错弹窗依次弹出
+                allError.forEach(item=>{
+                    item.style.display = "block"
+                })
+            }
+        })
+    </script>
+</body>
+</html>
