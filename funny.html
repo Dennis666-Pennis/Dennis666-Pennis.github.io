@@ -18,11 +18,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s;
         }
         h1 {
             color: #d4af37;
             margin-bottom: 80px;
             letter-spacing: 2px;
+            font-size:26px;
+            transition: all 0.3s;
         }
         .main-btn{
             background:#d4af37;
@@ -51,7 +54,6 @@
             justify-content: center;
             opacity: 0;
             transform: scale(0);
-            /* 提速 瞬间放大 */
             transition: all 0.18s ease-out;
         }
         .scary-pop.active{
@@ -63,7 +65,6 @@
             max-height: 90vh;
             border-radius:8px;
         }
-        /* 高频极速闪烁 */
         @keyframes flash {
             0% {background:#000;}
             50% {background:#ff0000;}
@@ -84,24 +85,33 @@
 
     <script>
         const btn = document.querySelector('.main-btn')
+        const titleText = document.querySelector('h1')
         const pop = document.querySelector('.scary-pop')
+        let clickCount = 0;
 
-        // 页面加载完立刻预缓存音效，零延迟
         const scarySound = new Audio('https://www.myinstants.com/media/sounds/minecraft-jumpscare.mp3')
         scarySound.preload = 'auto'
         scarySound.volume = 1
 
-        btn.onclick = ()=>{
-            pop.style.display = 'flex'
-            // 重绘锁帧，毫秒级同步
-            void pop.offsetWidth
-            pop.classList.add('active')
-            pop.classList.add('flash-on')
-
-            // 立刻从头爆响，无等待
-            scarySound.currentTime = 0
-            scarySound.play()
-        }
+        btn.addEventListener('click',function(){
+            clickCount ++;
+            // 分段文字提示
+            if(clickCount === 1){
+                titleText.innerText = "我劝你不要再继续";
+            }
+            else if(clickCount === 2){
+                titleText.innerText = "明知危险还要执意触碰";
+            }
+            else if(clickCount >= 3){
+                // 第三次点击直接触发全部惊吓效果
+                pop.style.display = 'flex'
+                void pop.offsetWidth
+                pop.classList.add('active')
+                pop.classList.add('flash-on')
+                scarySound.currentTime = 0
+                scarySound.play()
+            }
+        })
 
         pop.onclick = ()=>{
             pop.classList.remove('active')
