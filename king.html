@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>国王游戏 多人酒桌</title>
+    <title>扫码联机 国王游戏</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         * {
             margin: 0;
@@ -18,17 +21,23 @@
             flex-direction: column;
             align-items: center;
             padding: 40px 20px;
+            color: #fff;
         }
         h1 {
             color: #d4af37;
             letter-spacing: 2px;
             margin-bottom: 35px;
+            font-size:28px;
+        }
+        .box{
+            width:100%;
+            max-width:500px;
+            text-align:center;
         }
         .select-box{
-            margin-bottom:40px;
+            margin-bottom:30px;
         }
         label{
-            color:#fff;
             font-size:17px;
         }
         select{
@@ -39,139 +48,179 @@
             border-radius:6px;
             font-size:16px;
             margin-left:12px;
+            outline:none;
         }
-        .start-btn{
+        .btn{
             background:#d4af37;
             border:none;
-            padding:15px 60px;
+            padding:14px 55px;
             border-radius:8px;
             font-size:18px;
             font-weight:bold;
             cursor: pointer;
             transition: 0.2s;
-            margin-bottom:40px;
+            margin:10px 0;
         }
-        .start-btn:hover{
+        .btn:hover{
             background: #b9962c;
             transform: scale(1.05);
         }
-        .card-wrap{
-            display: flex;
-            flex-wrap: wrap;
-            gap:15px;
-            justify-content: center;
-            max-width:700px;
+        #qrcode{
+            margin:30px auto;
+            padding:15px;
+            background:#fff;
+            border-radius:10px;
+            display:inline-block;
         }
-        .card-item{
-            width:100px;
-            height:140px;
+        .room-text{
+            color:#d4af37;
+            font-size:20px;
+            margin:15px 0;
+        }
+        .card{
+            width:130px;
+            height:180px;
             background:#1e1e1e;
             border:2px solid #d4af37;
-            border-radius:10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color:#fff;
-            font-size:22px;
-            cursor:pointer;
+            border-radius:12px;
+            margin:30px auto;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:24px;
         }
-        .king-input{
-            margin-top:40px;
-            width:450px;
-        }
-        .king-input input{
+        .king-order{
+            margin-top:30px;
             width:100%;
-            padding:14px;
+        }
+        .king-order input{
+            width:100%;
+            padding:15px;
             background:#222;
             border:1px solid #d4af37;
             color:#fff;
             border-radius:8px;
             font-size:16px;
-            outline: none;
+            outline:none;
         }
-        .hide-text{
-            color:#999;
-            margin-top:20px;
-            font-size:15px;
-            text-align:center;
+        .tip{
+            color:#888;
+            margin-top:25px;
+            font-size:14px;
+            line-height:1.6;
         }
     </style>
 </head>
 <body>
-    <h1>国王游戏</h1>
+    <div class="box">
+        <h1>扫码联机 · 国王游戏</h1>
 
-    <div class="select-box">
-        <label>选择游玩人数</label>
-        <select id="peopleNum">
-            <option value="2">2人</option>
-            <option value="3">3人</option>
-            <option value="4">4人</option>
-            <option value="5">5人</option>
-            <option value="6">6人</option>
-            <option value="7">7人</option>
-            <option value="8" selected>8人</option>
-        </select>
+        <div class="select-box">
+            <label>选择游玩人数</label>
+            <select id="userNum">
+                <option value="2">2人</option>
+                <option value="3">3人</option>
+                <option value="4">4人</option>
+                <option value="5">5人</option>
+                <option value="6">6人</option>
+                <option value="7">7人</option>
+                <option value="8" selected>8人</option>
+            </select>
+        </div>
+
+        <button class="btn" id="createRoom">创建游戏房间</button>
+        <div class="room-text" id="roomId"></div>
+        <div id="qrcode"></div>
+
+        <div class="card" id="userCard">等待开局</div>
+        <div class="king-order" id="kingBox" style="display:none;">
+            <input id="orderInput" placeholder="国王在此下达游戏指令，例如：1号和4号进行互动">
+        </div>
+
+        <p class="tip">房主生成二维码后，好友使用微信扫码即可加入游戏<br>每位玩家仅能查看自身身份，国王无法查看其他人编号</p>
     </div>
-
-    <button class="start-btn">开始发牌</button>
-    <div class="card-wrap" id="cardBox"></div>
-
-    <div class="king-input" id="kingInputBox" style="display:none;">
-        <input id="orderInput" placeholder="国王在此下达指令，例如：1号与3号进行互动">
-    </div>
-    <p class="hide-text">每位玩家点击卡牌仅可查看自身身份，国王无法查看其他人编号</p>
 
     <script>
-        const peopleSelect = document.getElementById('peopleNum')
-        const cardBox = document.getElementById('cardBox')
-        const startBtn = document.querySelector('.start-btn')
-        const kingInputBox = document.getElementById('kingInputBox')
+        // 云端数据库全局配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyD9cH7s9kF8xLqUe8Z7X9t5B7a6C3d2E1f",
+            databaseURL: "https://kinggame-online-default-rtdb.firebaseio.com/",
+            projectId: "kinggame-online"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        let peopleCount = 8
-        let roleArr = []
-        let kingIndex = -1
+        let roomCode = "";
+        let myRole = "";
+        const pageUrl = window.location.href;
 
-        peopleSelect.onchange = function(){
-            peopleCount = parseInt(this.value)
+        // 随机生成6位房间号
+        function getRandomRoom(){
+            return Math.floor(100000 + Math.random() * 900000).toString();
         }
 
-        // 初始化发牌
-        startBtn.onclick = function(){
-            cardBox.innerHTML = ''
-            kingInputBox.style.display = 'none'
-            roleArr = []
+        // 创建房间
+        document.getElementById('createRoom').addEventListener('click',function(){
+            roomCode = getRandomRoom();
+            const num = document.getElementById('userNum').value;
+            document.getElementById('roomId').innerText = "房间号：" + roomCode;
+            document.getElementById('qrcode').innerHTML = "";
 
-            // 随机选定国王位置
-            kingIndex = Math.floor(Math.random() * peopleCount)
+            // 生成微信扫码二维码
+            new QRCode(document.getElementById("qrcode"),{
+                text: pageUrl + "?room=" + roomCode,
+                width:220,
+                height:220
+            })
 
-            for(let i = 0; i < peopleCount; i++){
-                if(i === kingIndex){
-                    roleArr.push("国王")
-                }else{
-                    roleArr.push(i + 1)
-                }
-            }
+            // 初始化房间数据
+            db.ref("room/" + roomCode).set({
+                people:num,
+                status:"ready",
+                king:"",
+                order:""
+            })
+            startGameListen();
+        })
 
-            // 生成卡牌
-            for(let j = 0; j < peopleCount; j++){
-                let card = document.createElement('div')
-                card.className = "card-item"
-                card.innerText = "未知卡牌"
-                card.dataset.id = j
+        // 监听房间数据
+        function startGameListen(){
+            if(!roomCode) return;
+            db.ref("room/" + roomCode).on("value",snap=>{
+                let data = snap.val();
+                if(!data) return;
 
-                card.onclick = function(){
-                    let idx = parseInt(this.dataset.id)
-                    // 国王只显示自己身份，看不到其他人
-                    if(roleArr[idx] === "国王"){
-                        this.innerText = "国王"
-                        kingInputBox.style.display = 'block'
-                    }else{
-                        this.innerText = roleArr[idx]
+                if(data.status === "start"){
+                    myRole = data.roles[Math.floor(Math.random()*data.roles.length)];
+                    document.getElementById('userCard').innerText = myRole;
+
+                    if(myRole === "国王"){
+                        document.getElementById('kingBox').style.display = "block";
                     }
                 }
-                cardBox.appendChild(card)
-            }
+                if(data.order){
+                    alert("国王指令：" + data.order);
+                }
+            })
         }
+
+        // 扫码自动加入房间
+        (function joinRoom(){
+            let url = new URL(window.location.href);
+            let r = url.searchParams.get("room");
+            if(r){
+                roomCode = r;
+                document.getElementById('roomId').innerText = "已加入房间：" + roomCode;
+                document.getElementById('qrcode').style.display = "none";
+                startGameListen();
+            }
+        })()
+
+        // 国王发布指令
+        document.getElementById('orderInput').addEventListener('input',function(){
+            if(!roomCode || myRole !== "国王") return;
+            db.ref("room/" + roomCode + "/order").set(this.value)
+        })
     </script>
 </body>
 </html>
