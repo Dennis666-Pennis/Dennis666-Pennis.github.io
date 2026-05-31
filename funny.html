@@ -88,21 +88,10 @@
         const titleText = document.querySelector('h1')
         const pop = document.querySelector('.scary-pop')
         let clickCount = 0;
-        let audioFirst = false;
-
-        // 更换稳定不会失效的恐怖尖叫音源
-        const scarySound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-terror-scream-1291.mp3")
-        scarySound.volume = 1
 
         btn.addEventListener('click',function(){
-            // 首次点击解除浏览器音频拦截限制
-            if(!audioFirst){
-                scarySound.play();
-                scarySound.pause();
-                audioFirst = true;
-            }
-
             clickCount ++;
+
             if(clickCount === 1){
                 titleText.innerText = "我劝你不要再继续";
             }
@@ -114,8 +103,11 @@
                 void pop.offsetWidth
                 pop.classList.add('active')
                 pop.classList.add('flash-on')
-                scarySound.currentTime = 0
-                scarySound.play()
+
+                // 原生点击事件直接触发音频，绕过浏览器拦截
+                let audio = new Audio("https://www.soundjay.com/scary-scream-1.mp3");
+                audio.volume = 1;
+                audio.play();
             }
         })
 
